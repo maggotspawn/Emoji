@@ -55,13 +55,34 @@ jobs:
       - name: Set Java environment
         run: |
           echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
+          export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+
+      - name: Accept Android SDK licenses
+        run: |
+          yes | sdkmanager --licenses || true
 
       - name: Build APK with Buildozer
         run: |
-          buildozer android debug
+          buildozer -v android debug
+
+      - name: List build output
+        if: always()
+        run: |
+          echo "Contents of bin directory:"
+          ls -la bin/ || echo "No bin directory"
+          echo "Build directory structure:"
+          find .buildozer -name "*.apk" || echo "No APK found"
 
       - name: Upload APK artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: emoji-stego-apk
           path: bin/*.apk
+
+      - name: Upload build logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: .buildozer/logs/
